@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 
    Copyright 2015 Jatinshravan
@@ -15,7 +16,6 @@
    limitations under the License.
 """
 
-#!/usr/bin/env python
 import subprocess
 import json
 from vm import VM

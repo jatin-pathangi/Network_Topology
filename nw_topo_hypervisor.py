@@ -50,6 +50,7 @@ class Hypervisor(object):
 Class that starts networks and VMs and also destroys them in KVM
 """
 class KVM(Hypervisor):
+    telnet_start_port = 20000  #Default port to start using for console
     def __init__(self):
         pass
     
@@ -105,18 +106,19 @@ class KVM(Hypervisor):
     telnet. To connect to the VM's console via telnet, the port returned
     by this function is used
     """
-    def get_port(self, start_port):
+    def get_port(self):
+        start_port = KVM.telnet_start_port
         while True:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            res = sock.connect_ex(('', start_port))
-            if not res == 0:
+            try:
+                sock.bind(('', start_port))
+            except socket.error as msg:
+                start_port += 10
                 sock.close()
-                break
-            else:
-                start_port += 1
-                sock.close()
-
-        return start_port
+                continue
+            sock.close()
+            KVM.telnet_start_port = start_port + 1
+            return start_port
      
     """
     Function to add the --network set of commands to the virt install 
@@ -135,9 +137,6 @@ class KVM(Hypervisor):
     """
     def create_vm(self, vm, work_dir, iso_dir):
         name_to_port = {}
-        used_ports_telnet = []
-        i = 1
-        start_telnet = 20000
         form = ''
         extra = []
         
@@ -170,13 +169,7 @@ class KVM(Hypervisor):
             cmd_list.extend(['--cpu', 'qemu64,disable=svm'])
 
         if vm.console == "telnet":
-            tcp_port = get_port(start)
-            
-            while tcp_port in used_ports:
-                start += 1
-                tcp_port = self.get_port(start)
-                used_ports.append(tcp_port)
-            
+            tcp_port = self.get_port()
             cmd_list.extend(['--graphics', 'none', '--serial',\
             'tcp,host=:%d,mode=bind,protocol=telnet' % tcp_port\
             ,'--noautoconsole'])
