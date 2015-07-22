@@ -86,15 +86,22 @@ def console(name):
         print ("Resources file not present. Run main.py with start")
         return
     
+    namespace = ''
+
     for dic in data:
+        if 'NAMESPACE' in dic.keys():
+            namespace = dic['NAMESPACE']
+    
+    for dic in data:    
         if 'VMs' in dic.keys():
             for vm in dic['VMs']:
-                if vm.keys()[0] == name:
-                    if not vm[name] == 'vnc':
+                if vm.keys()[0] == name+namespace:
+                    if not vm[name+namespace] == 'vnc':
                         subprocess.call(['telnet', 'localhost',\
-                        vm[name]])
+                        vm[name+namespace]])
                     else:
-                        subprocess.call(['virt-viewer', name])
+                        subprocess.call(['virt-viewer', name+namespace])
+
 def main():
     work_dir = "working_dir"
     if not os.path.exists(work_dir):
@@ -130,7 +137,7 @@ def main():
     for obj in nw_topo_hypervisor.Hypervisor.__subclasses__():
         hypervisor_list.append(obj.__name__)
 
-    brdige_type = hypervisor_type = ''
+    brdige_type = hypervisor_type = namespace = ''
     
     for dic in data:
         if 'COMMON' in dic.keys():
@@ -164,6 +171,9 @@ def main():
             
             else:
                 hypervisor_type = 'KVM'
+
+            if 'NAMESPACE' in dic['COMMON'].keys():
+                namespace = dic['COMMON']['NAMESPACE']
         
         if 'VMS' in dic.keys():
             vm_list = dic['VMS']
@@ -177,6 +187,7 @@ def main():
     vm_obj_dict = {}
     
     for vm in vm_list:
+        vm['name'] = vm['name'] + namespace
         vm_obj_dict[vm['name']] = (VM(vm,iso_dir,work_dir, br_names))
     
     f = open('conf/resources.json', 'w')
@@ -191,6 +202,7 @@ def main():
     for key in connections:
         conn_name = key
         for endp in connections[key]:
+            endp['name'] = endp['name']+namespace
             if endp['name'] in vm_obj_dict.keys():
                 vm_obj_dict[endp['name']].fill_connection\
                 (endp,conn_name, br_names)
@@ -229,7 +241,8 @@ def main():
     writable.append({"VMs":[]}) 
     for vm in vm_obj_list:
         writable[2]['VMs'].append(hyp.create_vm(vm, work_dir, iso_dir))
-   
+    
+    writable.append({'NAMESPACE':namespace})
     json.dump(writable,f)
     f.close()
 

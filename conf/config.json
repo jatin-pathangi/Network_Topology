@@ -4,7 +4,8 @@
             { 
                 "BRIDGE":"LinuxBridge",
                 "HYPERVISOR":"KVM",
-                "ISO_DIR":"iso_dir"
+                "ISO_DIR":"iso_dir",
+                "NAMESPACE":"j1"
             }
         
        
