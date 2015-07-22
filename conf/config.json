@@ -1,0 +1,67 @@
+[
+    {
+        "COMMON": 
+            { 
+                "BRIDGE":"LinuxBridge",
+                "HYPERVISOR":"KVM",
+                "ISO_DIR":"iso_dir"
+            }
+        
+       
+    },
+    {
+        "BRIDGE_NAMES":
+            {
+                "mgmt":"cust_management",
+                "dummy":"cust_dummy"
+            }
+    },
+    {
+        "VMS":  [
+            {
+                "name": "ubuntua",
+                "version": "ubuntu_15",
+                "port_list":
+                    {
+                        "start_port":1,
+                        "end_port":3
+                    },
+                "console":"vnc"
+            },
+            {
+                "name":"ubuntu",
+                "version":"ubuntu_15",
+                "port_list":
+                    {
+                        "start_port":1,
+                        "end_port":3
+                    },
+                "console":"vnc"
+            }
+
+        ]
+    },
+    {
+        "CONNECTIONS": 
+            {
+                "conn1":[
+                    {
+                        "name":"ubuntua", "port":2
+                    },
+                    {
+                        "name":"ubuntu", "port":3
+                    }
+                ],
+                "conn2":[
+                    {
+                        "name":"ubuntua",
+                        "port":3
+                    },
+                    {
+                        "name":"ubuntu",
+                        "port":2
+                    }
+                ] 
+            }
+    }                    
+]    
