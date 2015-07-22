@@ -71,6 +71,9 @@ def cleanup():
                 hyp.destroy_networks(destroyable)
                 mod_br(destroyable).del_bridge()
 
+    for i in os.listdir('working_dir'):
+        os.remove(os.path.join('working_dir',i))
+
     os.remove('conf/resources.json')
 
 def console(name):
