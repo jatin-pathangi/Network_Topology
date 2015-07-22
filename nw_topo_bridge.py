@@ -35,8 +35,10 @@ class LinuxBridge(Bridge):
 
     def add_bridge(self):
         subprocess.call(['brctl', 'addbr', self.name])
+        subprocess.call(['ip', 'link', 'set', self.name, 'up']) 
 
     def del_bridge(self):
+        subprocess.call(['ip', 'link', 'set', self.name, 'down']) 
         subprocess.call(['brctl', 'delbr', self.name])
 
 class OVSBridge(Bridge):
@@ -45,6 +47,8 @@ class OVSBridge(Bridge):
 
     def add_bridge(self):
         subprocess.call(['ovs-vsctl', 'add-br', self.name])
+        subprocess.call(['ip', 'link', 'set', self.name, 'up']) 
 
     def del_bridge(self):
         subprocess.call(['ovs-vsctl', 'del-br', self.name])
+        subprocess.call(['ip', 'link', 'set', self.name, 'down']) 
