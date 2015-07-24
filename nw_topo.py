@@ -137,7 +137,8 @@ def main():
     for obj in nw_topo_hypervisor.Hypervisor.__subclasses__():
         hypervisor_list.append(obj.__name__)
 
-    brdige_type = hypervisor_type = namespace = ''
+    brdige_type = hypervisor_type = ''
+    namespace = str(os.getpid())
     
     for dic in data:
         if 'COMMON' in dic.keys():
@@ -186,6 +187,9 @@ def main():
         
     vm_obj_dict = {}
     
+    for key in br_names:
+        br_names[key] = br_names[key]+namespace
+
     for vm in vm_list:
         vm['name'] = vm['name'] + namespace
         vm_obj_dict[vm['name']] = (VM(vm,iso_dir,work_dir, br_names))
@@ -197,8 +201,15 @@ def main():
                     "HYPERVISOR_TYPE":hypervisor_type}})
 
     writable.append({'bridges':[]})
-    writable[1]['bridges'].extend([br_names['mgmt'], br_names['dummy']])
-
+    writable[1]['bridges'].extend([br_names['mgmt'], \
+    br_names['dummy']])
+    
+    namespace_conn = {}
+    for key in connections:
+        namespace_conn[key+namespace] = connections[key]
+        
+    connections = namespace_conn
+    
     for key in connections:
         conn_name = key
         for endp in connections[key]:
@@ -238,7 +249,7 @@ def main():
     
     vm_obj_list = [vm_obj_dict[key] for key in vm_obj_dict]
     
-    writable.append({"VMs":[]}) 
+    writable.append({"VMs":[]})
     for vm in vm_obj_list:
         writable[2]['VMs'].append(hyp.create_vm(vm, work_dir, iso_dir))
     
