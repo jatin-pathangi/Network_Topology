@@ -29,3 +29,10 @@
       nw_topo.py --help
       
    to get a list of options.
+   
+   ISO_DIR is the place where you must put your ISO files and VMDK files if necessary for the VM to boot. The tool
+   loads these ISO files and creates either a blank disk image or a copy of the VMDK file you have specified, in the 
+   working directory, which is './working_dir'.
+   
+   The ISO files must be named as the version of the VM. For example a VM with version of 'ubuntu_15' will have an
+   ISO called 'ubuntu_15.iso' in the ISO_DIR. The same goes for VMDK files.
