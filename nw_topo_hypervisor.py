@@ -68,8 +68,8 @@ class KVM(Hypervisor):
         f_obj.write("\t<bridge name = '%s'/>\n" % sw_name)
         
         #Linux Bridge does not require virtualport type to be written in
-        if not br_typ == 'LinuxBridge':
-            f_obj.write("\t<virtualport type = '%s'/>\n" % br_typ.lower())
+        if br_typ == 'OVSBridge':
+            f_obj.write("\t<virtualport type = 'openvswitch'/>\n")
     
         f_obj.write("</network>\n")
         f_obj.close()
