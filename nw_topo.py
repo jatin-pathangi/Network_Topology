@@ -187,6 +187,9 @@ def main():
         
     vm_obj_dict = {}
     
+    """
+    Add namespace to bridges dummy and mgmt
+    """
     for key in br_names:
         br_names[key] = br_names[key]+namespace
 
