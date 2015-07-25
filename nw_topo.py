@@ -95,6 +95,11 @@ def console(name):
     for dic in data:    
         if 'VMs' in dic.keys():
             for vm in dic['VMs']:
+                """
+                Add namespace to the name specified because the VMs have 
+                been created with
+                a namespace appended
+                """
                 if vm.keys()[0] == name+namespace:
                     if not vm[name+namespace] == 'vnc':
                         subprocess.call(['telnet', 'localhost',\
@@ -192,7 +197,10 @@ def main():
     """
     for key in br_names:
         br_names[key] = br_names[key]+namespace
-
+   
+    """
+    Namespace added for VMs
+    """
     for vm in vm_list:
         vm['name'] = vm['name'] + namespace
         vm_obj_dict[vm['name']] = (VM(vm,iso_dir,work_dir, br_names))
