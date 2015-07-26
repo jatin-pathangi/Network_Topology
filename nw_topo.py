@@ -102,7 +102,7 @@ def console(name):
                     else:
                         subprocess.call(['virt-viewer', name+namespace])
 
-def restart(name, _all):
+def restart(name, _all, stop):
     f = open('conf/resources.json','r')
     data = json.load(f)
     f.close()
@@ -130,7 +130,8 @@ def restart(name, _all):
                         continue
                 
                 subprocess.call(['virsh','destroy',str(destroyable)])
-                subprocess.call(['virsh','start',str(destroyable)])
+                if not stop:
+                    subprocess.call(['virsh','start',str(destroyable)])
 
                 if not _all and flag:
                     break
@@ -309,6 +310,8 @@ rest = subparser.add_parser('restart',help="Restart VM")
 cons.add_argument('name',help="Name of VM to connect to")
 rest.add_argument('name',nargs='?',default='',help="Name of VM to restart")
 rest.add_argument('--all', action='store_true', help="Restart all VMs")
+rest.add_argument('--stop',action='store_true',\
+                 help="Stop instead of restart")
 
 root_dir = os.getcwd()
 args = parser.parse_args()
@@ -327,4 +330,4 @@ if args.which == 'restart':
     if args.all and not args.name == '':
         print ("Give either the name of a VM or --all")
     else:
-        restart(args.name, args.all)
+        restart(args.name, args.all, args.stop)
