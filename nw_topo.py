@@ -95,11 +95,6 @@ def console(name):
     for dic in data:    
         if 'VMs' in dic.keys():
             for vm in dic['VMs']:
-                """
-                Add namespace to the name specified because the VMs have 
-                been created with
-                a namespace appended
-                """
                 if vm.keys()[0] == name+namespace:
                     if not vm[name+namespace] == 'vnc':
                         subprocess.call(['telnet', 'localhost',\
@@ -107,6 +102,42 @@ def console(name):
                     else:
                         subprocess.call(['virt-viewer', name+namespace])
 
+def restart(name, _all):
+    f = open('conf/resources.json','r')
+    data = json.load(f)
+    f.close()
+    flag = False
+    destroyable = ''
+    namespace = ''
+
+    for dic in data:
+        if 'NAMESPACE' in dic.keys():
+            namespace = dic['NAMESPACE']
+
+    for dic in data:
+        if 'VMs' in dic.keys():
+            for vm in dic['VMs']:
+                if _all:
+                    destroyable = vm.keys()[0]
+                    flag = True
+
+                else:
+                    if vm.keys()[0] == name+namespace:
+                        destroyable = name+namespace
+                        flag = True
+                    
+                    else:
+                        continue
+                
+                subprocess.call(['virsh','destroy',str(destroyable)])
+                subprocess.call(['virsh','start',str(destroyable)])
+
+                if not _all and flag:
+                    break
+
+    if not flag:
+        print ("Invalid VM name, not present in created VM list")
+    
 def main():
     work_dir = "working_dir"
     if not os.path.exists(work_dir):
@@ -197,10 +228,7 @@ def main():
     """
     for key in br_names:
         br_names[key] = br_names[key]+namespace
-   
-    """
-    Namespace added for VMs
-    """
+
     for vm in vm_list:
         vm['name'] = vm['name'] + namespace
         vm_obj_dict[vm['name']] = (VM(vm,iso_dir,work_dir, br_names))
@@ -276,8 +304,11 @@ subparser = parser.add_subparsers(help="Help for subcommand", dest='which')
 start = subparser.add_parser('create',help="Create VMs and netwroks")
 clean=subparser.add_parser('clean',help="Destroy VMs and networks created")
 cons=subparser.add_parser('console', help="Connect to VM console")
+rest = subparser.add_parser('restart',help="Restart VM")
 
 cons.add_argument('name',help="Name of VM to connect to")
+rest.add_argument('name',nargs='?',default='',help="Name of VM to restart")
+rest.add_argument('--all', action='store_true', help="Restart all VMs")
 
 root_dir = os.getcwd()
 args = parser.parse_args()
@@ -292,3 +323,8 @@ elif args.which == 'clean':
     cleanup()
 elif args.which == 'console':
     console(args.name)
+if args.which == 'restart':
+    if args.all and not args.name == '':
+        print ("Give either the name of a VM or --all")
+    else:
+        restart(args.name, args.all)
