@@ -102,7 +102,7 @@ def console(name):
                     else:
                         subprocess.call(['virt-viewer', name+namespace])
 
-def restart(name, _all, stop):
+def restart_or_stop(name, _all, stop):
     f = open('conf/resources.json','r')
     data = json.load(f)
     f.close()
@@ -306,12 +306,13 @@ start = subparser.add_parser('create',help="Create VMs and netwroks")
 clean=subparser.add_parser('clean',help="Destroy VMs and networks created")
 cons=subparser.add_parser('console', help="Connect to VM console")
 rest = subparser.add_parser('restart',help="Restart VM")
+stop = subparser.add_parser('stop',help="Stop VM")
 
 cons.add_argument('name',help="Name of VM to connect to")
 rest.add_argument('name',nargs='?',default='',help="Name of VM to restart")
 rest.add_argument('--all', action='store_true', help="Restart all VMs")
-rest.add_argument('--stop',action='store_true',\
-                 help="Stop instead of restart")
+stop.add_argument('name',nargs='?',default='',help="Name of VM to restart")
+stop.add_argument('--all', action='store_true', help="Restart all VMs")
 
 root_dir = os.getcwd()
 args = parser.parse_args()
@@ -326,8 +327,12 @@ elif args.which == 'clean':
     cleanup()
 elif args.which == 'console':
     console(args.name)
-if args.which == 'restart':
+if args.which == 'restart' or args.which == 'stop':
     if args.all and not args.name == '':
         print ("Give either the name of a VM or --all")
+    
     else:
-        restart(args.name, args.all, args.stop)
+        if args.which == 'restart':
+            restart_or_stop(args.name, args.all, False)
+        if args.which == 'stop':
+            restart_or_stop(args.name,args.all, True)
