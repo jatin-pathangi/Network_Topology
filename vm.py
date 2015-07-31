@@ -43,6 +43,10 @@ class VM(object):
             self.disk = os.path.join(work_dir, self.version+'.vmdk')
         
     def fill_connection(self, endpoint, conn_name, br_names):
+        """
+        Function to fill the VM object's connection data structure using an endpoint 
+        and connection name as arguments.
+        """
         if not endpoint['port'] in \
         xrange(self.start_port, self.end_port+1):
             raise ValueError("Invalid port number for %s in connections"\
