@@ -2,6 +2,10 @@ import subprocess
 import os
 
 class VM(object):
+    """
+    This is the class that represents a Virtual Machine. Objects of this class can be initialized
+    by giving a VM dictionary obtained from the configuration file as an argument.
+    """
     def __init__(self, vm_dict, iso_dir, work_dir, br_names):
         self.name = vm_dict['name']
         self.version = vm_dict['version']
