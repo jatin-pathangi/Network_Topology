@@ -15,11 +15,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-#Readme
+#What does this tool do?
    This tool creates a network topology between virtual machines based on a 
    config file in JSON format present in the 'conf' directory.
    
-   VMs can either be switch VMs or standard Linux VMs. Currently uses KVM 
+   VMs can either be switch VMs or standard Linux VMs. It currently uses KVM 
    as the hypervisor and can be easily extended for using other hypervisors.
    It supports both Linux bridge and OpenVSwitch bridge as the network 
    bridges for interconnecting the VMs.
@@ -36,3 +36,24 @@
    
    The ISO files must be named as the version of the VM. For example a VM with version of 'ubuntu_15' will have an
    ISO called 'ubuntu_15.iso' in the ISO_DIR. The same goes for VMDK files.
+   
+#Installation
+   Run
+   
+      git clone https://github.com/Pathangi-Jatinshravan/Network_Topology.git 
+   
+   to get the latest version of the tool.
+   
+   Also make sure the required packages are installed before running the nw_topo.py script. You want:
+   
+   1)bridge-utils
+   
+   2)ovs-vsctl
+   
+   3)qemu-kvm
+   
+   4)libvirt-bin
+   
+   5)virt-manager
+   
+   as of now
