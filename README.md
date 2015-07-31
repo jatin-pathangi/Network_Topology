@@ -16,7 +16,7 @@
    limitations under the License.
 
 #What does this tool do?
-   This tool creates a network topology between virtual machines based on a 
+   This tool creates virtual machines and a network topology between them based on a 
    config file in JSON format present in the 'conf' directory.
    
    VMs can either be switch VMs or standard Linux VMs. It currently uses KVM 
@@ -30,12 +30,14 @@
       
    to get a list of options.
    
-   ISO_DIR is the place where you must put your ISO files and VMDK files if necessary for the VM to boot. The tool
-   loads these ISO files and creates either a blank disk image or a copy of the VMDK file you have specified, in the 
-   working directory, which is './working_dir'.
+   ISO_DIR is the place where you must put your ISO files and VMDK files if necessary 
+   for the VM to boot. The tool loads these ISO files and creates either a blank disk 
+   image or a copy of the VMDK file you have specified, in the working directory, 
+   which is './working_dir'.
    
-   The ISO files must be named as the version of the VM. For example a VM with version of 'ubuntu_15' will have an
-   ISO called 'ubuntu_15.iso' in the ISO_DIR. The same goes for VMDK files.
+   The ISO files must be named as the version of the VM. For example a VM with version 
+   of 'ubuntu_15' will have an ISO called 'ubuntu_15.iso' in the ISO_DIR. The same goes 
+   for VMDK files.
    
 #Installation
    Run
@@ -44,7 +46,8 @@
    
    to get the latest version of the tool.
    
-   Also make sure the required packages are installed before running the nw_topo.py script. You want:
+   Also make sure the required packages are installed before running the nw_topo.py script. 
+   You want:
    
    1)bridge-utils
    
@@ -54,6 +57,8 @@
    
    4)libvirt-bin
    
-   5)virt-manager
+   5)virt-manager  
    
-   as of now
+   Move the ISO files of the VMs you want to be created, along with any VMDK files they need for booting, into a 
+   directory, and specify this directory as the ISO_DIR in the config.json file under the 'COMMON' heading.
+   
