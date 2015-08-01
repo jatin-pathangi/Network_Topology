@@ -25,21 +25,7 @@ import nw_topo_hypervisor
 import os
 import sys
 
-def cleanup():
-    data = []
-    try:
-        f = open('conf/resources.json','r')
-        try:
-            data = json.load(f)
-        except:
-            f.close()
-            os.remove('conf/resources.json')
-            sys.exit(0)
-        f.close()
-    except IOError:
-        print ('Nothing to clean')
-        sys.exit(0)
-    
+def cleanup(data):
     mod_br = nw_topo_bridge
     mod_hyp = nw_topo_hypervisor
 
@@ -76,16 +62,7 @@ def cleanup():
 
     os.remove('conf/resources.json')
 
-def console(name):
-    data = []
-    try:
-        f = open('conf/resources.json','r')
-        data = json.load(f)
-        f.close()
-    except IOError:
-        print ("Resources file not present. Run main.py with start")
-        return
-    
+def console(data, name):
     namespace = ''
 
     for dic in data:
@@ -102,10 +79,7 @@ def console(name):
                     else:
                         subprocess.call(['virt-viewer', name+namespace])
 
-def restart_or_stop(name, _all, stop):
-    f = open('conf/resources.json','r')
-    data = json.load(f)
-    f.close()
+def restart_or_stop(data,name, _all, stop):
     flag = False
     destroyable = ''
     namespace = ''
@@ -323,16 +297,26 @@ os.chdir(root_dir)
 
 if args.which == 'create':
     main()
-elif args.which == 'clean':
-    cleanup()
+    sys.exit(0)
+
+data = []
+try:
+    f = open('conf/resources.json','r')
+    data = json.load(f)
+    f.close()
+except IOError:
+    sys.stdout.write("No resources created. Run with create option")
+
+if args.which == 'clean':
+    cleanup(data)
 elif args.which == 'console':
-    console(args.name)
+    console(data,args.name)
 if args.which == 'restart' or args.which == 'stop':
     if args.all and not args.name == '':
         print ("Give either the name of a VM or --all")
     
     else:
         if args.which == 'restart':
-            restart_or_stop(args.name, args.all, False)
+            restart_or_stop(data, args.name, args.all, False)
         if args.which == 'stop':
-            restart_or_stop(args.name,args.all, True)
+            restart_or_stop(data, args.name,args.all, True)

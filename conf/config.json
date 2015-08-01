@@ -2,7 +2,7 @@
     {
         "COMMON": 
             { 
-                "BRIDGE":"LinuxBridge",
+                "BRIDGE":"OVSBridge",
                 "HYPERVISOR":"KVM",
                 "ISO_DIR":"iso_dir",
                 "NAMESPACE":"j1"
