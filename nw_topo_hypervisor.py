@@ -26,8 +26,10 @@ class Hypervisor(object):
     Hypervisor class from which all sub hypervisor classes inherit their
     methods.
     """
+    __metaclass__ = ABCMeta
+
     @abstractmethod
-    def check_and_start_network(self, *args, **kwargs):
+    def start_networks(self, *args, **kwargs):
         #Method to start the network bridges specified in the arguments.
         pass
 
@@ -37,12 +39,12 @@ class Hypervisor(object):
         pass
 
     @abstractmethod
-    def destroy_network(self, *args, **kwargs):
+    def destroy_networks(self, *args, **kwargs):
         #Method to destroy networks created. Uses a resources file for this.
         pass
 
     @abstractmethod
-    def destroy_vms(self, *args, **kwargs):
+    def destroy_restart_stop_vms(self, *args, **kwargs):
         #Method to kill all VMs created. Uses a resources file for this.
         pass
 
@@ -212,7 +214,15 @@ class KVM(Hypervisor):
         subprocess.call([com0,com1,com2,'net-undefine',bridge])
 
         
-    def destroy_vms(self, vms):
+    def destroy_restart_stop_vms(self, vms, restart_or_stop):
         for vm in vms:
             subprocess.call(['virsh','destroy', vm.keys()[0]])
-            subprocess.call(['virsh','undefine',vm.keys()[0]])
+            if restart_or_stop == 'clean':
+                subprocess.call(['virsh','undefine',vm.keys()[0]])
+            elif restart_or_stop == 'restart':
+                subprocess.call(['virsh', 'start', vm.keys()[0]])
+            elif restart_or_stop == 'stop':
+                pass
+            else:
+                print ("Illegal argument to destroy_restart_stop_vms. Should be\
+                        'clean', 'restart' or 'stop'")
