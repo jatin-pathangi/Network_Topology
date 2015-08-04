@@ -47,6 +47,25 @@ class Hypervisor(object):
         pass
 
 """
+Class that handle ESXI hypervisor
+"""
+class ESXI(Hypervisor):
+    def __init__(self):
+        print ("In ESXI INit")
+
+    def destroy_networks(self, bridge):
+        print ("In ESXI destroy_networks")
+
+    def start_networks(self, connections, br_type, br_name):
+        print ("In ESXI add_network")
+
+    def destroy_vms(self, vms):
+        print ("In ESXI destroy VM")
+
+    def create_vm(self, vm, work_dir, iso_dir):
+        print ("In ESXI create vm")
+
+"""
 Class that starts networks and VMs and also destroys them in KVM
 """
 class KVM(Hypervisor):
