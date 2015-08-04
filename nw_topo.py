@@ -25,20 +25,26 @@ import nw_topo_hypervisor
 import os
 import sys
 
+def get_class(mod, data, typ):
+    for dic in data:
+        if 'COMMON' in dic.keys():
+            mod = getattr(mod, dic['COMMON'][typ])
+            break
+
+    return mod
+
 def cleanup(data):
     mod_br = nw_topo_bridge
     mod_hyp = nw_topo_hypervisor
-
-    for dic in data:
-        if 'COMMON' in dic.keys():
-            mod_hyp = getattr(mod_hyp, dic['COMMON']['HYPERVISOR_TYPE'])
-            mod_br = getattr(mod_br,dic['COMMON']['BRIDGE_TYPE'])
     
+    mod_br = get_class(mod_br, data, 'BRIDGE_TYPE')
+    mod_hyp = get_class(mod_hyp, data, 'HYPERVISOR_TYPE')
+
     hyp = mod_hyp()
     for dic in data:
         
         if 'VMs' in dic.keys(): 
-            hyp.destroy_vms(dic['VMs'])
+            hyp.destroy_restart_stop_vms(dic['VMs'], 'clean')
 
     for dic in data:
         if 'bridges' in dic.keys():
