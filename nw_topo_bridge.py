@@ -22,25 +22,26 @@ class Bridge(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def add_bridge(self, *args, **kwargs):
+    def __init__(self, name):
+        pass
+
+    @abstractmethod
+    def add_bridge(self):
         pass
     
     @abstractmethod
-    def del_bridge(self, *args, **kwargs):
+    def del_bridge(self):
         pass
 
 class EsxiBridge(Bridge):
     def __init__(self, name):
         self.name = name
-        print ("In ESXI Bridge")
 
     def add_bridge(self):
-        print ("IN ESXI add_bridge")
         subprocess.call(['esxcli', 'network', 'vswitch', 'standard',\
                          'add', '--vswitch-name='+self.name])
 
     def del_bridge(self):
-        print ("In ESXI del_bridge")
         subprocess.call(['esxcli', 'network', 'vswitch', 'standard',\
                          'remove', '--vswitch-name='+self.name])
 
@@ -65,5 +66,5 @@ class OVSBridge(Bridge):
         subprocess.call(['ip', 'link', 'set', self.name, 'up']) 
 
     def del_bridge(self):
-        subprocess.call(['ovs-vsctl', 'del-br', self.name])
         subprocess.call(['ip', 'link', 'set', self.name, 'down']) 
+        subprocess.call(['ovs-vsctl', 'del-br', self.name])

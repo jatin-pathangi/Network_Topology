@@ -36,11 +36,22 @@ def get_class(mod, data, typ):
 def cleanup(data):
     mod_br = nw_topo_bridge
     mod_hyp = nw_topo_hypervisor
+    hypervisor_type = None
+    hypervisor_data = None
     
     mod_br = get_class(mod_br, data, 'BRIDGE_TYPE')
     mod_hyp = get_class(mod_hyp, data, 'HYPERVISOR_TYPE')
 
-    hyp = mod_hyp()
+    for dic in data:
+        if 'COMMON' in dic.keys():
+            hypervisor_type = dic['COMMON']['HYPERVISOR_TYPE']
+
+    for dic in data:
+        if hypervisor_type in dic.keys():
+            hypervisor_data = dic[hypervisor_type]
+
+
+    hyp = mod_hyp(hypervisor_data)
     for dic in data:
         
         if 'VMs' in dic.keys(): 
@@ -142,6 +153,10 @@ def main():
     bridge_list = hypervisor_list = []
     vm_list = []
     connections = {}
+    brdige_type = hypervisor_type = ''
+    hypervisor_data = None
+    namespace = str(os.getpid())
+    
     br_names = {'mgmt':"mgmt", 'dummy':"dummy"}
     
     """
@@ -154,9 +169,6 @@ def main():
     for obj in nw_topo_hypervisor.Hypervisor.__subclasses__():
         hypervisor_list.append(obj.__name__)
 
-    brdige_type = hypervisor_type = ''
-    namespace = str(os.getpid())
-    
     for dic in data:
         if 'COMMON' in dic.keys():
             """
@@ -201,7 +213,10 @@ def main():
 
         if 'BRIDGE_NAMES' in dic.keys():
             br_names = dic["BRIDGE_NAMES"]
-        
+
+        if hypervisor_type in dic.keys():
+            hypervisor_data = dic[hypervisor_type]
+
     vm_obj_dict = {}
     
     """
@@ -217,12 +232,14 @@ def main():
     f = open('conf/resources.json', 'w')
 
     writable = []
+    writable.append({'bridges':[]})
+    writable.append({"VMs":[]})
+    writable[0]['bridges'].extend([br_names['mgmt'], \
+    br_names['dummy']])
     writable.append({"COMMON":{"BRIDGE_TYPE":bridge_type,\
                     "HYPERVISOR_TYPE":hypervisor_type}})
 
-    writable.append({'bridges':[]})
-    writable[1]['bridges'].extend([br_names['mgmt'], \
-    br_names['dummy']])
+    writable.append({hypervisor_type:hypervisor_data})
     
     namespace_conn = {}
     for key in connections:
@@ -241,7 +258,7 @@ def main():
                 raise ValueError("Connection name %s not present in valid\
                 VM list" % endp['name'])
          
-        writable[1]['bridges'].append({key:connections[key]}) 
+        writable[0]['bridges'].append({key:connections[key]}) 
 
     """
     Import the hypervisor which is specified in the config file
@@ -249,7 +266,7 @@ def main():
     HyperVisor = nw_topo_hypervisor
     HyperVisor = getattr(HyperVisor, hypervisor_type)
 
-    hyp = HyperVisor()
+    hyp = HyperVisor(hypervisor_data)
     
     """
     Import the bridge which is specified in the config file using getattr
@@ -269,9 +286,8 @@ def main():
     
     vm_obj_list = [vm_obj_dict[key] for key in vm_obj_dict]
     
-    writable.append({"VMs":[]})
     for vm in vm_obj_list:
-        writable[2]['VMs'].append(hyp.create_vm(vm, work_dir, iso_dir))
+        writable[1]['VMs'].append(hyp.create_vm(vm, work_dir, iso_dir))
     
     writable.append({'NAMESPACE':namespace})
     json.dump(writable,f)

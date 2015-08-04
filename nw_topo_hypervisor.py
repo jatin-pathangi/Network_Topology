@@ -29,22 +29,27 @@ class Hypervisor(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def start_networks(self, *args, **kwargs):
+    def __init__(self, hyp_params):
+        #Method to initialize the hypervisor
+        pass
+
+    @abstractmethod
+    def start_networks(self, connections, br_type, br_name): 
         #Method to start the network bridges specified in the arguments.
         pass
 
     @abstractmethod
-    def create_vm(self, *args, **kwargs):
+    def create_vm(self, vm, work_dir, iso_dir):
         #Method to start vm from the VM object in the arguments.
         pass
 
     @abstractmethod
-    def destroy_networks(self, *args, **kwargs):
+    def destroy_networks(self, bridge):
         #Method to destroy networks created. Uses a resources file for this.
         pass
 
     @abstractmethod
-    def destroy_restart_stop_vms(self, *args, **kwargs):
+    def destroy_restart_stop_vms(self, vms, action):
         #Method to kill all VMs created. Uses a resources file for this.
         pass
 
@@ -52,7 +57,7 @@ class Hypervisor(object):
 Class that handle ESXI hypervisor
 """
 class ESXI(Hypervisor):
-    def __init__(self):
+    def __init__(self, hyp_params):
         print ("In ESXI INit")
 
     def destroy_networks(self, bridge):
@@ -61,7 +66,7 @@ class ESXI(Hypervisor):
     def start_networks(self, connections, br_type, br_name):
         print ("In ESXI add_network")
 
-    def destroy_vms(self, vms):
+    def destroy_restart_stop_vms(self, vms, action):
         print ("In ESXI destroy VM")
 
     def create_vm(self, vm, work_dir, iso_dir):
@@ -72,7 +77,7 @@ Class that starts networks and VMs and also destroys them in KVM
 """
 class KVM(Hypervisor):
     telnet_start_port = 20000  #Default port to start using for console
-    def __init__(self):
+    def __init__(self, hyp_params):
         pass
     
     """
@@ -109,7 +114,6 @@ class KVM(Hypervisor):
         bridges.extend([br_names['mgmt'], br_names['dummy']])
         bridges.extend(connections.keys())
         
-        print bridges
         for i in xrange(len(bridges)):
             com0 = 'virsh'
             com1 = '--connect'
@@ -214,14 +218,14 @@ class KVM(Hypervisor):
         subprocess.call([com0,com1,com2,'net-undefine',bridge])
 
         
-    def destroy_restart_stop_vms(self, vms, restart_or_stop):
+    def destroy_restart_stop_vms(self, vms, action):
         for vm in vms:
             subprocess.call(['virsh','destroy', vm.keys()[0]])
-            if restart_or_stop == 'clean':
+            if action == 'clean':
                 subprocess.call(['virsh','undefine',vm.keys()[0]])
-            elif restart_or_stop == 'restart':
+            elif action == 'restart':
                 subprocess.call(['virsh', 'start', vm.keys()[0]])
-            elif restart_or_stop == 'stop':
+            elif action == 'stop':
                 pass
             else:
                 print ("Illegal argument to destroy_restart_stop_vms. Should be\
