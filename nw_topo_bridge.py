@@ -40,6 +40,10 @@ class EsxiBridge(Bridge):
     def add_bridge(self):
         subprocess.call(['esxcli', 'network', 'vswitch', 'standard',\
                          'add', '--vswitch-name='+self.name])
+        subprocess.call(['esxcli', 'network','vswitch','standard','policy',\
+                         'security', 'set', '--allow-promiscuous', 'true', \
+                          '--allow-mac-change', 'true', \
+                          '--vswitch-name='+self.name])
         subprocess.call(['esxcli', 'network','vswitch','standard','portgroup',\
                          'add', '--portgroup-name='+self.name, \
                           '--vswitch-name='+self.name])
