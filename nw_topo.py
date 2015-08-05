@@ -225,6 +225,23 @@ def main():
     for key in br_names:
         br_names[key] = br_names[key]+namespace
 
+    """
+    Import the hypervisor which is specified in the config file
+    """
+    HyperVisor = nw_topo_hypervisor
+    HyperVisor = getattr(HyperVisor, hypervisor_type)
+
+    hyp = HyperVisor(hypervisor_data)
+    
+    """
+    Import the bridge which is specified in the config file using getattr
+    """
+    mod = nw_topo_bridge
+    mod = getattr(mod,bridge_type)
+    
+    mgmt = mod(br_names['mgmt'])
+    dummy = mod(br_names['dummy'])
+
     for vm in vm_list:
         vm['name'] = vm['name'] + namespace
         vm_obj_dict[vm['name']] = (VM(vm,iso_dir,work_dir, br_names))
@@ -260,22 +277,6 @@ def main():
          
         writable[0]['bridges'].append({key:connections[key]}) 
 
-    """
-    Import the hypervisor which is specified in the config file
-    """
-    HyperVisor = nw_topo_hypervisor
-    HyperVisor = getattr(HyperVisor, hypervisor_type)
-
-    hyp = HyperVisor(hypervisor_data)
-    
-    """
-    Import the bridge which is specified in the config file using getattr
-    """
-    mod = nw_topo_bridge
-    mod = getattr(mod,bridge_type)
-    
-    mgmt = mod(br_names['mgmt'])
-    dummy = mod(br_names['dummy'])
     mgmt.add_bridge()
     dummy.add_bridge()
    

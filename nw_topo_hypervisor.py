@@ -58,19 +58,151 @@ Class that handle ESXI hypervisor
 """
 class ESXI(Hypervisor):
     def __init__(self, hyp_params):
-        print ("In ESXI INit")
+        if ((hyp_params != None) and ("datastore" in hyp_params)):
+            if (os.path.isdir(hyp_params["datastore"])):
+                self.datast = hyp_params["datastore"]
+            else:
+                print ('not able to access data store ',hyp_params["datastore"])
+                sys.exit(1)
+        else:
+            print ("Required parameter - datastore missing for ESXI hypervisor")
+            sys.exit(1)
+        print ("In ESXI INit", self.datast)
+
+    def gen_base_vmx(self, fname):
+        """ Opens a file with the name as fname, and puts the base 
+            statements of a .vmx file into this
+        """
+        fhdl = open(fname, 'w')
+        fhdl.write('.encoding = "UTF-8"\n')
+        fhdl.write('config.version = "8"\n')
+        fhdl.write('virtualHW.version = "7"\n')
+        fhdl.write('pciBridge0.present = "TRUE"\n')
+        fhdl.write('svga.present = "TRUE"\n')
+        fhdl.write('pciBridge4.present = "TRUE"\n')
+        fhdl.write('pciBridge4.virtualDev = "pcieRootPort"\n')
+        fhdl.write('pciBridge4.functions = "8"\n')
+        fhdl.write('pciBridge5.present = "TRUE"\n')
+        fhdl.write('pciBridge5.virtualDev = "pcieRootPort"\n')
+        fhdl.write('pciBridge5.functions = "8"\n')
+        fhdl.write('pciBridge6.present = "TRUE"\n')
+        fhdl.write('pciBridge6.virtualDev = "pcieRootPort"\n')
+        fhdl.write('pciBridge6.functions = "8"\n')
+        fhdl.write('pciBridge7.present = "TRUE"\n')
+        fhdl.write('pciBridge7.virtualDev = "pcieRootPort"\n')
+        fhdl.write('pciBridge7.functions = "8"\n')
+        fhdl.write('virtualHW.productCompatibility = "hosted"\n')
+        fhdl.write('memSize = "1108"\n')
+        fhdl.write('sched.cpu.units = "mhz"\n')
+        fhdl.write('powerType.powerOff = "soft"\n')
+        fhdl.write('powerType.suspend = "hard"\n')
+        fhdl.write('powerType.reset = "soft"\n')
+        fhdl.write('guestOS = "other-64"\n')
+        fhdl.write('toolScripts.afterPowerOn = "TRUE"\n')
+        fhdl.write('toolScripts.afterResume = "TRUE"\n')
+        fhdl.write('toolScripts.beforeSuspend = "TRUE"\n')
+        fhdl.write('toolScripts.beforePowerOff = "TRUE"\n')
+        fhdl.write('chipset.onlineStandby = "FALSE"\n')
+        fhdl.write('sched.cpu.min = "0"\n')
+        fhdl.write('sched.cpu.shares = "normal"\n')
+        fhdl.write('sched.mem.min = "0"\n')
+        fhdl.write('sched.mem.minSize = "0"\n')
+        fhdl.write('sched.mem.shares = "normal"\n')
+        fhdl.write('floppy0.present = "FALSE"\n')
+        fhdl.write('replay.supported = "FALSE"\n')
+        fhdl.write('replay.filename = ""\n')
+        fhdl.write('ide0:0.redo = ""\n')
+        fhdl.write('pciBridge0.pciSlotNumber = "17"\n')
+        fhdl.write('pciBridge4.pciSlotNumber = "21"\n')
+        fhdl.write('pciBridge5.pciSlotNumber = "22"\n')
+        fhdl.write('pciBridge6.pciSlotNumber = "23"\n')
+        fhdl.write('pciBridge7.pciSlotNumber = "24"\n')
+        fhdl.write('vmci0.pciSlotNumber = "33"\n')
+        fhdl.write('vmci0.id = "158687753"\n')
+        fhdl.write('evcCompatibilityMode = "FALSE"\n')
+        fhdl.write('vmotion.checkpointFBSize = "4194304"\n')
+        fhdl.write('cleanShutdown = "FALSE"\n')
+        fhdl.write('softPowerOff = "FALSE"\n')
+        return (fhdl)
 
     def destroy_networks(self, bridge):
-        print ("In ESXI destroy_networks")
+        # For ESXI the bridge class does all the cleanup, nothing to do here
+        pass
 
     def start_networks(self, connections, br_type, br_name):
-        print ("In ESXI add_network")
+        # For ESXI the bridge class does all the setup. Nothing to do here
+        pass
 
     def destroy_restart_stop_vms(self, vms, action):
+        for vm in vms:
+# find the vmid of this vm
+            vm_name = vm.keys()[0]
+            vm_datast = os.path.join(self.datast, vm_name)
+            print ("Destroy vm %s %s" %(vm_datast, vm_name)
+            proc = subprocess.Popen(['vim-cmd', 'vmsvc/getallvms', \
+            '|' 'grep' , vm_name, '|' , 'cut' , '-f', '1' , \
+            '-d' , '" "'], stdout=subprocess.PIPE)
+            vm_id = proc.communicate()[0]
+            subprocess.call(['vim-cmd', 'vmsvc/power.off', vm_id])
+            if (action == 'restart'):
+                subprocess.call(['vim-cmd', 'vmsvc/power.on', vm_id])
+            elif (action == 'clean'):
+                #subprocess.call(['rm' , vm_datast + '/' + vm_name +'*'])
+                #subprocess.call('rmdir', vm_datast )
+                pass
+            elif (action == 'stop'):
+                pass
+            else:
+                print ("Illegal argument to destroy_restart_stop")
         print ("In ESXI destroy VM")
 
-    def create_vm(self, vm, work_dir, iso_dir):
-        print ("In ESXI create vm")
+    def create_vm(self, vm, tmp_dir, iso_dir):
+        # Create the vm directory under the datastore
+        vm_dir = os.path.join(self.datast, vm.name)
+        subprocess.call(['mkdir', vm_dir])
+
+        #Create the base .vmx file
+        vmx_fil = os.path.join(vm_dir, vm.name + '.vmx')
+        fhdl = self.gen_base_vmx(vmx_fil)
+        fhdl.write('nvram = "%s.nvram"\n' %(vm.name))
+        fhdl.write('displayName = "%s"\n' %(vm.name))
+        
+        #if there is a .iso file, then enable the cdrom option
+        fname = os.path.join(iso_dir, vm.version+'.iso')
+        if (os.path.isfile(fname)):
+            fhdl.write('ide0:1.deviceType = "cdrom-image"\n')
+            fhdl.write('ide0:1.fileName = "%s"\n' %(fname))
+            fhdl.write('ide0:1.present = "TRUE"\n')
+
+        #If there is a .vmdk file, then use that or create a new one
+        fname = os.path.join(iso_dir, vm.version + '.vmdk')
+        vmdk_fl = os.path.join(vm_dir, vm.name + '.vmdk' )
+        if (os.path.isfile(fname)):
+            subprocess.call(['cp', fname, vmdk_fl])
+        else:
+            subprocess.call(['vmkfstools', '-c', '16g', '-d' 'thin', '-a', \
+            'ide', vmdk_fl])
+        fhdl.write('ide0:0.fileName = "%s"\n' %(vmdk_fl))
+        fhdl.write('ide0:0.mode = "independent-persistent"\n')
+        fhdl.write('ide0:0.present = "TRUE"\n')
+
+        # Fill up the network list
+        intf_no = 0
+        for i in vm.connections:
+            fhdl.write('ethernet%d.virtualDev = "e1000"\n' %(intf_no))
+            fhdl.write('ethernet%d.networkName = "%s"\n' %(intf_no, i))
+            fhdl.write('ethernet%d.addressType = "generated"\n' %(intf_no))
+            fhdl.write('ethernet%d.present = "TRUE"\n' %(intf_no))
+            intf_no += 1
+        # Now create the VM
+        fhdl.close()
+        proc = subprocess.Popen(['vim-cmd', 'solo/registervm', vmx_fil], 
+                         stdout = subprocess.PIPE)
+        vm_id = proc.communicate()[0]
+        subprocess.call(['vim-cmd', 'vmsvc/power.on', vm_id])
+        name_to_port = {}
+        name_to_port[vm.name] = "vnc"
+        return name_to_port
 
 """
 Class that starts networks and VMs and also destroys them in KVM
@@ -165,23 +297,31 @@ class KVM(Hypervisor):
         form = ''
         extra = []
         
-        if not vm.disk == '':
-            form = os.path.splitext(vm.disk)[1]
-            form = form[1:]
-        else:
-            form = 'qcow2'
-            subprocess.call(['qemu-img', 'create', '-fqcow2',\
-            os.path.join(work_dir,(vm.name+'.img')), '16G'])
-
-            vm.disk = os.path.join(work_dir,vm.name+'.img')
-    
         cmd_list = [
         'virt-install', 
          '--name=%s' % vm.name, 
          '--ram=1024', 
-         '--disk=%s,format=%s,device=disk,bus=ide' % (vm.disk,form), 
-         '--cdrom='+os.path.join(iso_dir,(vm.version+'.iso')),
          '--watchdog','i6300esb,action=none']
+
+        # If .iso is present add the cdrom option
+        iso_fil = os.path.join(iso_dir, vm.version + '.iso')
+        if (os.path.exists(iso_fil)):
+            cmd_list.append('--cdrom=' + iso_fil)
+        
+        #If vmdk file is present add it as the disk
+        vmdk_fil = os.path.join(iso_dir, vm.version + '.vmdk')
+        tgt_fil = os.path.join(work_dir, vm.version + '.vmdk')
+        if (os.path.exists(vmdk_fil)):
+            form = 'vmdk'
+            subprocess.cmd(['cp', vmdk_fil, tgt_fil])
+            if (not(os.path.exists(iso_fil))):
+                cmd_list.append('--boot=hd')
+        else:
+            form = 'qcow2'
+            subprocess.call(['qemu-img', 'create', '-fqcow2', tgt_fil, '16G'])
+
+        cmd_list.append('--disk=%s,format=%s,device=disk,bus=ide' 
+                        %(tgt_fil, form)) 
 
         if 'boot_device' in vm.extra_commands.keys():
             if vm.extra_commands['boot_device'] == 'cdrom':

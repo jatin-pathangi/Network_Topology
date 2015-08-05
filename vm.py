@@ -13,7 +13,6 @@ class VM(object):
         self.end_port = vm_dict['port_list']['end_port']
         self.connections = []
         self.disk = ''
-        self.cdrom = ''
         self.extra_commands = {}
 
         for i in xrange((self.end_port+1-self.start_port)):
@@ -31,17 +30,15 @@ class VM(object):
             self.extra_commands['cpu_type'] =''
        
         self.console = vm_dict['console']
-        
-        if os.path.exists(os.path.join(iso_dir,self.version+'.iso')):
-            self.cdrom = os.path.join(iso_dir, self.version+'.iso')
-        else:
-            raise ValueError("ISO not present for %s" % self.name)
 
-        if os.path.exists(os.path.join(iso_dir,self.version+'.vmdk')):
-            subprocess.call(['cp', \
-            os.path.join(iso_dir, self.version+'.vmdk'), work_dir])
-            self.disk = os.path.join(work_dir, self.version+'.vmdk')
-        
+        # At least one of .iso or .vmdk file must be present
+        iso_fil = os.path.join(iso_dir, self.version + '.iso')
+        vmdk_fil = os.path.join(iso_dir, self.version + '.vmdk')
+        if (os.path.exists(iso_fil) or os.path.exists(vmdk_fil)):
+            pass
+        else:
+            raise ValueError("ISO  or vmdk not present for %s" % self.name)
+
     def fill_connection(self, endpoint, conn_name, br_names):
         """
         Function to fill the VM object's connection data structure using an endpoint 
