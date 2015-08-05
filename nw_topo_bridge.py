@@ -40,8 +40,14 @@ class EsxiBridge(Bridge):
     def add_bridge(self):
         subprocess.call(['esxcli', 'network', 'vswitch', 'standard',\
                          'add', '--vswitch-name='+self.name])
+        subprocess.call(['esxcli', 'network','vswitch','standard','portgroup',\
+                         'add', '--portgroup-name='+self.name, \
+                          '--vswitch-name='+self.name])
 
     def del_bridge(self):
+        subprocess.call(['esxcli', 'network','vswitch','standard','portgroup',\
+                         'remove', '--portgroup-name='+self.name, \
+                          '--vswitch-name='+self.name])
         subprocess.call(['esxcli', 'network', 'vswitch', 'standard',\
                          'remove', '--vswitch-name='+self.name])
 

@@ -118,6 +118,7 @@ class ESXI(Hypervisor):
         fhdl.write('pciBridge6.pciSlotNumber = "23"\n')
         fhdl.write('pciBridge7.pciSlotNumber = "24"\n')
         fhdl.write('vmci0.pciSlotNumber = "33"\n')
+        fhdl.write('vmci0.present = "TRUE"\n')
         fhdl.write('vmci0.id = "158687753"\n')
         fhdl.write('evcCompatibilityMode = "FALSE"\n')
         fhdl.write('vmotion.checkpointFBSize = "4194304"\n')
@@ -137,19 +138,16 @@ class ESXI(Hypervisor):
         for vm in vms:
 # find the vmid of this vm
             vm_name = vm.keys()[0]
+            vm_id = vm[vm.keys()[0]]
             vm_datast = os.path.join(self.datast, vm_name)
-            print ("Destroy vm %s %s" %(vm_datast, vm_name)
-            proc = subprocess.Popen(['vim-cmd', 'vmsvc/getallvms', \
-            '|' 'grep' , vm_name, '|' , 'cut' , '-f', '1' , \
-            '-d' , '" "'], stdout=subprocess.PIPE)
-            vm_id = proc.communicate()[0]
             subprocess.call(['vim-cmd', 'vmsvc/power.off', vm_id])
             if (action == 'restart'):
                 subprocess.call(['vim-cmd', 'vmsvc/power.on', vm_id])
             elif (action == 'clean'):
-                #subprocess.call(['rm' , vm_datast + '/' + vm_name +'*'])
-                #subprocess.call('rmdir', vm_datast )
-                pass
+                subprocess.call(['vim-cmd', 'vmsvc/unregister', vm_id])
+                for i in os.listdir(vm_datast):
+                    os.remove(os.path.join(vm_datast, i))
+                os.rmdir(vm_datast)
             elif (action == 'stop'):
                 pass
             else:
@@ -201,7 +199,7 @@ class ESXI(Hypervisor):
         vm_id = proc.communicate()[0]
         subprocess.call(['vim-cmd', 'vmsvc/power.on', vm_id])
         name_to_port = {}
-        name_to_port[vm.name] = "vnc"
+        name_to_port[vm.name] = vm_id.rstrip()
         return name_to_port
 
 """
