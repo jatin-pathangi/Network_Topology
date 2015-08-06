@@ -175,6 +175,7 @@ class ESXI(Hypervisor):
         #If there is a .vmdk file, then use that or create a new one
         fname = os.path.join(iso_dir, vm.version + '.vmdk')
         vmdk_fl = os.path.join(vm_dir, vm.name + '.vmdk' )
+        print ("Creating the disk, may take several minutes")
         if (os.path.isfile(fname)):
             subprocess.call(['cp', fname, vmdk_fl])
         else:
@@ -307,19 +308,19 @@ class KVM(Hypervisor):
             cmd_list.append('--cdrom=' + iso_fil)
         
         #If vmdk file is present add it as the disk
+        print ("Copying or creating disk - May take several minutes")
         vmdk_fil = os.path.join(iso_dir, vm.version + '.vmdk')
-        tgt_fil = os.path.join(work_dir, vm.version + '.vmdk')
+        tgt_fil = os.path.join(work_dir, vm.name + '.img')
         if (os.path.exists(vmdk_fil)):
-            form = 'vmdk'
-            subprocess.cmd(['cp', vmdk_fil, tgt_fil])
+            subprocess.call(['qemu-img', 'convert', '-f', 'vmdk', '-O', \
+             'qcow2', vmdk_fil, tgt_fil]) 
             if (not(os.path.exists(iso_fil))):
                 cmd_list.append('--boot=hd')
         else:
-            form = 'qcow2'
             subprocess.call(['qemu-img', 'create', '-fqcow2', tgt_fil, '16G'])
 
-        cmd_list.append('--disk=%s,format=%s,device=disk,bus=ide' 
-                        %(tgt_fil, form)) 
+        cmd_list.append('--disk=%s,format=qcow2,device=disk,bus=ide' 
+                        %(tgt_fil)) 
 
         if 'boot_device' in vm.extra_commands.keys():
             if vm.extra_commands['boot_device'] == 'cdrom':

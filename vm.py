@@ -37,7 +37,8 @@ class VM(object):
         if (os.path.exists(iso_fil) or os.path.exists(vmdk_fil)):
             pass
         else:
-            raise ValueError("ISO  or vmdk not present for %s" % self.name)
+            raise ValueError("ISO %s or vmdk %s not present for vm %s"\
+                         %(iso_fil, vmdk_fil, self.name))
 
     def fill_connection(self, endpoint, conn_name, br_names):
         """
