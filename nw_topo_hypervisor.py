@@ -53,6 +53,10 @@ class Hypervisor(object):
         #Method to kill all VMs created. Uses a resources file for this.
         pass
 
+    def graphical_console(self, vm_name):
+        #Method to connect to the graphical console of a VM
+        pass
+
 """
 Class that handle ESXI hypervisor
 """
@@ -136,7 +140,7 @@ class ESXI(Hypervisor):
 
     def destroy_restart_stop_vms(self, vms, action):
         for vm in vms:
-# find the vmid of this vm
+            # find the vmid of this vm
             vm_name = vm.keys()[0]
             vm_id = vm[vm.keys()[0]]
             vm_datast = os.path.join(self.datast, vm_name)
@@ -202,6 +206,10 @@ class ESXI(Hypervisor):
         name_to_port = {}
         name_to_port[vm.name] = vm_id.rstrip()
         return name_to_port
+
+    def graphical_console(self, vm_name):
+        #Please define this method
+        pass
 
 """
 Class that starts networks and VMs and also destroys them in KVM
@@ -369,3 +377,6 @@ class KVM(Hypervisor):
             else:
                 print ("Illegal argument to destroy_restart_stop_vms. Should be\
                         'clean', 'restart' or 'stop'")
+    
+    def graphical_console(self, vm_name):
+        subprocess.call(['virt-viewer', vm_name])

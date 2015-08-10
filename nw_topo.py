@@ -45,7 +45,7 @@ def cleanup(data):
     for dic in data:
         if 'COMMON' in dic.keys():
             hypervisor_type = dic['COMMON']['HYPERVISOR_TYPE']
-
+    
     for dic in data:
         if hypervisor_type in dic.keys():
             hypervisor_data = dic[hypervisor_type]
@@ -81,6 +81,9 @@ def cleanup(data):
 
 def console(data, name):
     namespace = ''
+    
+    hyp = nw_topo_hypervisor
+    hyp = get_class(hyp, data, "HYPERVISOR_TYPE")
 
     for dic in data:
         if 'NAMESPACE' in dic.keys():
@@ -94,7 +97,8 @@ def console(data, name):
                         subprocess.call(['telnet', 'localhost',\
                         vm[name+namespace]])
                     else:
-                        subprocess.call(['virt-viewer', name+namespace])
+                        hyp_obj = hyp([])
+                        hyp_obj.graphical_console(vm[name+namespace])
 
 def restart_or_stop(data,name, _all, stop):
     flag = False
