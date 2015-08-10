@@ -98,7 +98,7 @@ def console(data, name):
                         vm[name+namespace]])
                     else:
                         hyp_obj = hyp([])
-                        hyp_obj.graphical_console(vm[name+namespace])
+                        hyp_obj.graphical_console(name+namespace)
 
 def restart_or_stop(data,name, _all, stop):
     flag = False
