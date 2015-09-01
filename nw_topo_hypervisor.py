@@ -17,7 +17,7 @@
 from abc import ABCMeta, abstractmethod
 import os
 import socket
-import subprocess 
+import subprocess
 import json
 import sys
 
@@ -34,7 +34,7 @@ class Hypervisor(object):
         pass
 
     @abstractmethod
-    def start_networks(self, connections, br_type, br_name): 
+    def start_networks(self, connections, br_type, br_name):
         #Method to start the network bridges specified in the arguments.
         pass
 
@@ -49,7 +49,7 @@ class Hypervisor(object):
         pass
 
     @abstractmethod
-    def destroy_restart_stop_vms(self, vms, action):
+    def destroy_vms(self, vms):
         #Method to kill all VMs created. Uses a resources file for this.
         pass
 
@@ -74,7 +74,7 @@ class ESXI(Hypervisor):
         print ("In ESXI INit", self.datast)
 
     def gen_base_vmx(self, fname):
-        """ Opens a file with the name as fname, and puts the base 
+        """ Opens a file with the name as fname, and puts the base
             statements of a .vmx file into this
         """
         fhdl = open(fname, 'w')
@@ -168,7 +168,7 @@ class ESXI(Hypervisor):
         fhdl = self.gen_base_vmx(vmx_fil)
         fhdl.write('nvram = "%s.nvram"\n' %(vm.name))
         fhdl.write('displayName = "%s"\n' %(vm.name))
-        
+
         #if there is a .iso file, then enable the cdrom option
         fname = os.path.join(iso_dir, vm.version+'.iso')
         if (os.path.isfile(fname)):
@@ -199,7 +199,7 @@ class ESXI(Hypervisor):
             intf_no += 1
         # Now create the VM
         fhdl.close()
-        proc = subprocess.Popen(['vim-cmd', 'solo/registervm', vmx_fil], 
+        proc = subprocess.Popen(['vim-cmd', 'solo/registervm', vmx_fil],
                          stdout = subprocess.PIPE)
         vm_id = proc.communicate()[0]
         subprocess.call(['vim-cmd', 'vmsvc/power.on', vm_id])
@@ -218,7 +218,7 @@ class KVM(Hypervisor):
     telnet_start_port = 20000  #Default port to start using for console
     def __init__(self, hyp_params):
         pass
-    
+
     """
     Function to generate the file that is used by virsh net commands to
     start the networks
@@ -227,19 +227,19 @@ class KVM(Hypervisor):
         f_obj = open('conf/net.xml', 'w')
 
         f_obj.write('<network>\n')
-        
+
         f_obj.write("\t<name>%s</name>\n" % sw_name)
         f_obj.write("\t<forward mode = 'bridge'/>\n")
         f_obj.write("\t<bridge name = '%s'/>\n" % sw_name)
-        
+
         #Linux Bridge does not require virtualport type to be written in
         if br_typ == 'OVSBridge':
             f_obj.write("\t<virtualport type = 'openvswitch'/>\n")
-    
+
         f_obj.write("</network>\n")
         f_obj.close()
 
-    
+
     """
     Function that calls the virsh net commands after creating XML files for
     each network.
@@ -252,17 +252,17 @@ class KVM(Hypervisor):
         bridges = []
         bridges.extend([br_names['mgmt'], br_names['dummy']])
         bridges.extend(connections.keys())
-        
+
         for i in xrange(len(bridges)):
             com0 = 'virsh'
             com1 = '--connect'
             com2 = 'qemu:///system'
-            
+
             self.gen_net_xml(bridges[i], br_type)
             subprocess.call([com0,com1,com2,'net-define', 'conf/net.xml'])
             subprocess.call([com0,com1,com2,'net-autostart', bridges[i]])
             subprocess.call([com0,com1,com2,'net-start', bridges[i]])
-        
+
         os.remove('conf/net.xml')
 
     """
@@ -283,9 +283,9 @@ class KVM(Hypervisor):
             sock.close()
             KVM.telnet_start_port = start_port + 1
             return start_port
-     
+
     """
-    Function to add the --network set of commands to the virt install 
+    Function to add the --network set of commands to the virt install
     commands
     """
     def add_network(self, cmd_list, vm):
@@ -293,9 +293,9 @@ class KVM(Hypervisor):
             cmd_list.append('--network')
             cmd_list.append('network=%s,model=e1000' \
             % i)
-        
+
         return cmd_list
-    
+
     """
     Function to start the VMs using virt-install commands
     """
@@ -303,32 +303,32 @@ class KVM(Hypervisor):
         name_to_port = {}
         form = ''
         extra = []
-        
+
         cmd_list = [
-        'virt-install', 
-         '--name=%s' % vm.name, 
-         '--ram=1024', 
+        'virt-install',
+         '--name=%s' % vm.name,
+         '--ram=1024',
          '--watchdog','i6300esb,action=none']
 
         # If .iso is present add the cdrom option
         iso_fil = os.path.join(iso_dir, vm.version + '.iso')
         if (os.path.exists(iso_fil)):
             cmd_list.append('--cdrom=' + iso_fil)
-        
+
         #If vmdk file is present add it as the disk
         print ("Copying or creating disk - May take several minutes")
         vmdk_fil = os.path.join(iso_dir, vm.version + '.vmdk')
         tgt_fil = os.path.join(work_dir, vm.name + '.img')
         if (os.path.exists(vmdk_fil)):
             subprocess.call(['qemu-img', 'convert', '-f', 'vmdk', '-O', \
-             'qcow2', vmdk_fil, tgt_fil]) 
+             'qcow2', vmdk_fil, tgt_fil])
             if (not(os.path.exists(iso_fil))):
                 cmd_list.append('--boot=hd')
         else:
             subprocess.call(['qemu-img', 'create', '-fqcow2', tgt_fil, '16G'])
 
-        cmd_list.append('--disk=%s,format=qcow2,device=disk,bus=ide' 
-                        %(tgt_fil)) 
+        cmd_list.append('--disk=%s,format=qcow2,device=disk,bus=ide'
+                        %(tgt_fil))
 
         if 'boot_device' in vm.extra_commands.keys():
             if vm.extra_commands['boot_device'] == 'cdrom':
@@ -345,11 +345,11 @@ class KVM(Hypervisor):
             cmd_list.extend(['--graphics', 'none', '--serial',\
             'tcp,host=:%d,mode=bind,protocol=telnet' % tcp_port\
             ,'--noautoconsole'])
-            name_to_port[vm.name] = "%d" % tcp_port            
+            name_to_port[vm.name] = "%d" % tcp_port
         else:
             cmd_list.extend(['--graphics', 'vnc', '--noautoconsole'])
             name_to_port[vm.name] = "vnc"
-        
+
         cmd_list = self.add_network(cmd_list, vm)
 
         subprocess.call(cmd_list)
@@ -360,16 +360,16 @@ class KVM(Hypervisor):
         com0 = 'virsh'
         com1 = '--connect'
         com2 = 'qemu:///system'
-        
+
         subprocess.call([com0,com1,com2,'net-destroy', bridge])
         subprocess.call([com0,com1,com2,'net-undefine',bridge])
 
-        
-    def destroy_restart_stop_vms(self, vms, action):
+
+    def destroy_vms(self, vms):
         for vm in vms:
             subprocess.call(['virsh','destroy', vm.keys()[0]])
-            if action == 'clean':
-                subprocess.call(['virsh','undefine',vm.keys()[0]])
+            subprocess.call(['virsh','undefine',vm.keys()[0]])
+            """
             elif action == 'restart':
                 subprocess.call(['virsh', 'start', vm.keys()[0]])
             elif action == 'stop':
@@ -377,6 +377,11 @@ class KVM(Hypervisor):
             else:
                 print ("Illegal argument to destroy_restart_stop_vms. Should be\
                         'clean', 'restart' or 'stop'")
-    
+            """
+    def restart_stop_vms(self, vm_name, stop):
+        subprocess.call(['virsh', 'destroy', vm_name])
+        if not stop:
+            subprocess.call(['virsh', 'start', vm_name])
+
     def graphical_console(self, vm_name):
         subprocess.call(['virt-viewer', vm_name])

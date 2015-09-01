@@ -20,7 +20,7 @@ import subprocess
 import json
 from vm import VM
 import argparse
-import nw_topo_bridge 
+import nw_topo_bridge
 import nw_topo_hypervisor
 import os
 import sys
@@ -38,14 +38,14 @@ def cleanup(data):
     mod_hyp = nw_topo_hypervisor
     hypervisor_type = None
     hypervisor_data = None
-    
+
     mod_br = get_class(mod_br, data, 'BRIDGE_TYPE')
     mod_hyp = get_class(mod_hyp, data, 'HYPERVISOR_TYPE')
 
     for dic in data:
         if 'COMMON' in dic.keys():
             hypervisor_type = dic['COMMON']['HYPERVISOR_TYPE']
-    
+
     for dic in data:
         if hypervisor_type in dic.keys():
             hypervisor_data = dic[hypervisor_type]
@@ -53,9 +53,9 @@ def cleanup(data):
 
     hyp = mod_hyp(hypervisor_data)
     for dic in data:
-        
-        if 'VMs' in dic.keys(): 
-            hyp.destroy_restart_stop_vms(dic['VMs'], 'clean')
+
+        if 'VMs' in dic.keys():
+            hyp.destroy_vms(dic['VMs'])
 
     for dic in data:
         if 'bridges' in dic.keys():
@@ -81,15 +81,15 @@ def cleanup(data):
 
 def console(data, name):
     namespace = ''
-    
+
     hyp = nw_topo_hypervisor
     hyp = get_class(hyp, data, "HYPERVISOR_TYPE")
 
     for dic in data:
         if 'NAMESPACE' in dic.keys():
             namespace = dic['NAMESPACE']
-    
-    for dic in data:    
+
+    for dic in data:
         if 'VMs' in dic.keys():
             for vm in dic['VMs']:
                 if vm.keys()[0] == name+namespace:
@@ -100,10 +100,24 @@ def console(data, name):
                         hyp_obj = hyp([])
                         hyp_obj.graphical_console(name+namespace)
 
-def restart_or_stop(data,name, _all, stop):
+def restart_or_stop(data, name, _all, stop):
     flag = False
     destroyable = ''
     namespace = ''
+    hypervisor_type = None
+    mod_hyp = nw_topo_hypervisor
+
+    mod_hyp = get_class(mod_hyp, data, 'HYPERVISOR_TYPE')
+
+    for dic in data:
+        if 'COMMON' in dic.keys():
+            hypervisor_type = dic['COMMON']['HYPERVISOR_TYPE']
+
+    for dic in data:
+        if hypervisor_type in dic.keys():
+            hypervisor_data = dic[hypervisor_type]
+
+    hyp = mod_hyp(hypervisor_data)
 
     for dic in data:
         if 'NAMESPACE' in dic.keys():
@@ -120,20 +134,22 @@ def restart_or_stop(data,name, _all, stop):
                     if vm.keys()[0] == name+namespace:
                         destroyable = name+namespace
                         flag = True
-                    
+
                     else:
                         continue
-                
+
+                hyp.restart_stop_vms(str(name+namespace), stop)
+                """
                 subprocess.call(['virsh','destroy',str(destroyable)])
                 if not stop:
                     subprocess.call(['virsh','start',str(destroyable)])
-
+                """
                 if not _all and flag:
                     break
 
     if not flag:
         print ("Invalid VM name, not present in created VM list")
-    
+
 def main():
     work_dir = "working_dir"
     if not os.path.exists(work_dir):
@@ -160,11 +176,11 @@ def main():
     brdige_type = hypervisor_type = ''
     hypervisor_data = None
     namespace = str(os.getpid())
-    
+
     br_names = {'mgmt':"mgmt", 'dummy':"dummy"}
-    
+
     """
-    Make the list of valid bridges and hypervisors by looking at all the 
+    Make the list of valid bridges and hypervisors by looking at all the
     subclasses declared of the particular base class.
     """
     for obj in nw_topo_bridge.Bridge.__subclasses__():
@@ -176,11 +192,11 @@ def main():
     for dic in data:
         if 'COMMON' in dic.keys():
             """
-            Check if a bridge is specified in the config file. If not, 
+            Check if a bridge is specified in the config file. If not,
             use OpenVSwitch as default.
             """
-            if 'BRIDGE' in dic['COMMON'].keys(): 
-                bridge_type = dic['COMMON']['BRIDGE'] 
+            if 'BRIDGE' in dic['COMMON'].keys():
+                bridge_type = dic['COMMON']['BRIDGE']
                 if not bridge_type in bridge_list:
                     print ("Invalid bridge %s, list of valid \
                     bridges are:" % bridge_type)
@@ -202,13 +218,13 @@ def main():
                     hypervisors are:" % hypervisor_type )
                     for i in hypervisor_list:
                         print (i)
-            
+
             else:
                 hypervisor_type = 'KVM'
 
             if 'NAMESPACE' in dic['COMMON'].keys():
                 namespace = dic['COMMON']['NAMESPACE']
-        
+
         if 'VMS' in dic.keys():
             vm_list = dic['VMS']
 
@@ -222,7 +238,7 @@ def main():
             hypervisor_data = dic[hypervisor_type]
 
     vm_obj_dict = {}
-    
+
     """
     Add namespace to bridges dummy and mgmt
     """
@@ -236,20 +252,20 @@ def main():
     HyperVisor = getattr(HyperVisor, hypervisor_type)
 
     hyp = HyperVisor(hypervisor_data)
-    
+
     """
     Import the bridge which is specified in the config file using getattr
     """
     mod = nw_topo_bridge
     mod = getattr(mod,bridge_type)
-    
+
     mgmt = mod(br_names['mgmt'])
     dummy = mod(br_names['dummy'])
 
     for vm in vm_list:
         vm['name'] = vm['name'] + namespace
         vm_obj_dict[vm['name']] = (VM(vm,iso_dir,work_dir, br_names))
-    
+
     f = open('conf/resources.json', 'w')
 
     writable = []
@@ -261,13 +277,13 @@ def main():
                     "HYPERVISOR_TYPE":hypervisor_type}})
 
     writable.append({hypervisor_type:hypervisor_data})
-    
+
     namespace_conn = {}
     for key in connections:
         namespace_conn[key+namespace] = connections[key]
-        
+
     connections = namespace_conn
-    
+
     for key in connections:
         conn_name = key
         for endp in connections[key]:
@@ -278,22 +294,22 @@ def main():
             else:
                 raise ValueError("Connection name %s not present in valid\
                 VM list" % endp['name'])
-         
-        writable[0]['bridges'].append({key:connections[key]}) 
+
+        writable[0]['bridges'].append({key:connections[key]})
 
     mgmt.add_bridge()
     dummy.add_bridge()
-   
+
     for key in connections:
         mod(key).add_bridge()
-    
+
     hyp.start_networks(connections, bridge_type, br_names)
-    
+
     vm_obj_list = [vm_obj_dict[key] for key in vm_obj_dict]
-    
+
     for vm in vm_obj_list:
         writable[1]['VMs'].append(hyp.create_vm(vm, work_dir, iso_dir))
-    
+
     writable.append({'NAMESPACE':namespace})
     json.dump(writable,f)
     f.close()
@@ -341,7 +357,7 @@ elif args.which == 'console':
 if args.which == 'restart' or args.which == 'stop':
     if args.all and not args.name == '':
         print ("Give either the name of a VM or --all")
-    
+
     else:
         if args.which == 'restart':
             restart_or_stop(data, args.name, args.all, False)

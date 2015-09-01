@@ -1,1 +1,0 @@
-[{"bridges": ["cust_managementj1", "cust_dummyj1", {"conn1j1": [{"name": "ubuntuaj1", "port": 2}, {"name": "ubuntuj1", "port": 3}]}, {"conn2j1": [{"name": "ubuntuaj1", "port": 3}, {"name": "ubuntuj1", "port": 2}]}]}, {"VMs": [{"ubuntuj1": "vnc"}, {"ubuntuaj1": "vnc"}]}, {"COMMON": {"BRIDGE_TYPE": "OVSBridge", "HYPERVISOR_TYPE": "KVM"}}, {"KVM": null}, {"NAMESPACE": "j1"}]
