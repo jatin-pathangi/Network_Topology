@@ -57,6 +57,10 @@ class Hypervisor(object):
         #Method to connect to the graphical console of a VM
         pass
 
+    @abstractmethod
+    def restart_stop_vms(self, vm_name, stop):
+        pass
+
 """
 Class that handle ESXI hypervisor
 """
@@ -208,6 +212,10 @@ class ESXI(Hypervisor):
         return name_to_port
 
     def graphical_console(self, vm_name):
+        #Please define this method
+        pass
+
+    def restart_stop_vms(self, vm_name, stop):
         #Please define this method
         pass
 
